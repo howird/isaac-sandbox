@@ -102,6 +102,39 @@ RUN sed -i '1s/^/source \/home\/'"$USERNAME"'\/setup_docker_env.sh\n/' /home/$US
     pip install --upgrade pip && \
     pip install -r /home/$USERNAME/pip_requirements.txt
 
-COPY . /$PROJECT_NAME
 WORKDIR /$PROJECT_NAME
 ENTRYPOINT /bin/bash -i /home/$USERNAME/entrypoint.sh
+
+
+## -----------------------------------------
+## Stage 4: Setting Up Isaac-Lab.
+## -----------------------------------------
+FROM isaac-sim AS isaac-lab
+
+USER root
+
+ENV ISAACSIM_PATH=/isaac-sim
+ENV ISAACLAB_PATH=/IsaacLab
+
+RUN apt-get -y update && \
+    apt-get -y install --no-install-recommends \
+    ncurses-term && \
+    apt -y autoremove && apt clean autoclean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN git clone https://github.com/isaac-sim/IsaacLab.git ${ISAACLAB_PATH} && \
+    ln -sf ${ISAACSIM_PATH} ${ISAACLAB_PATH}/_isaac_sim && \
+    cd ${ISAACLAB_PATH} && \
+    source /home/$USERNAME/setup_docker_env.sh && \
+    ./isaaclab.sh --install && \
+    chown -R $USER_ID:$GROUP_ID ${ISAACLAB_PATH}
+
+# Install apt dependencies for extensions that declare them in their extension.toml
+RUN /home/$USERNAME/setup_docker_env.sh && \
+    ${ISAACLAB_PATH}/isaaclab.sh -p ${ISAACLAB_PATH}/tools/install_deps.py apt ${ISAACLAB_PATH}/source/extensions && \
+    apt -y autoremove && apt clean autoclean && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR ${ISAACLAB_PATH}
+
+USER $USERNAME

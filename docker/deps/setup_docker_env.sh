@@ -12,3 +12,9 @@ alias python3=$ISAAC_PATH/python.sh
 alias pip='$ISAAC_PATH/python.sh -m pip'
 alias pip3='$ISAAC_PATH/python.sh -m pip'
 alias tensorboard='$ISAAC_PATH/python.sh $ISAAC_PATH/tensorboard'
+export TZ=$(date +%Z)
+
+if [ -d "/IsaacLab" ]; then
+    export ISAACLAB_PATH=/IsaacLab
+    alias isaaclab=$ISAACLAB_PATH/isaaclab.sh
+fi
